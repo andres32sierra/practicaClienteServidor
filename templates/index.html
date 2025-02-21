@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios</title>
+</head>
+<body>
+    <h1>Lista de Usuarios</h1>
+    <a href="{{ url_for('logout') }}" style="float: right;">Cerrar Sesión</a>
+    <ul id="listaUsuarios"></ul>
+
+    <h2>Agregar Usuario</h2>
+    <input type="text" id="nombre" placeholder="Escribe un nombre">
+    <button onclick="agregarUsuario()">Agregar</button>
+
+    <h2>Buscar Usuario por ID</h2>
+    <input type="number" id="usuarioId" placeholder="Escribe el ID">
+    <button onclick="buscarUsuarioPorId()">Buscar</button>
+    <p id="resultadoBusqueda"></p>
+
+    <h2>Eliminar Usuario por ID</h2>
+    <input type="number" id="usuarioEliminar" placeholder="Escribe el ID">
+    <button onclick="eliminarUsuario()">Eliminar</button>
+    <p id="resultadoEliminacion"></p>
+
+    <script>
+        async function obtenerUsuarios() {
+            const respuesta = await fetch('/usuarios');
+            const usuarios = await respuesta.json();
+            let listaUsuarios = document.getElementById('listaUsuarios');
+            listaUsuarios.innerHTML = '';
+
+            usuarios.forEach(usuario => {
+                let item = document.createElement('li');
+                item.textContent = `ID: ${usuario.id}, Nombre: ${usuario.nombre}`;
+                listaUsuarios.appendChild(item);
+            });
+        }
+
+        async function agregarUsuario() {
+            let nombre = document.getElementById('nombre').value;
+            if (nombre.trim() === '') {
+                alert("⚠️ Escribe un nombre antes de agregar.");
+                return;
+            }
+
+            const respuesta = await fetch('/usuarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre })
+            });
+
+            if (respuesta.ok) {
+                document.getElementById('nombre').value = '';
+                obtenerUsuarios();
+            } else {
+                alert("❌ Error al agregar usuario.");
+            }
+        }
+
+        async function buscarUsuarioPorId() {
+            let usuarioId = document.getElementById('usuarioId').value;
+            if (usuarioId.trim() === '') {
+                alert("⚠️ Escribe un ID antes de buscar.");
+                return;
+            }
+
+            const respuesta = await fetch(`/usuarios/${usuarioId}`);
+            const resultado = await respuesta.json();
+
+            let resultadoBusqueda = document.getElementById('resultadoBusqueda');
+            if (respuesta.ok) {
+                resultadoBusqueda.innerHTML = `✅ Usuario encontrado: ID ${resultado.id}, Nombre: ${resultado.nombre}`;
+            } else {
+                resultadoBusqueda.innerHTML = "❌ Usuario no encontrado.";
+            }
+        }
+
+        async function eliminarUsuario() {
+            let usuarioId = document.getElementById('usuarioEliminar').value;
+            if (usuarioId.trim() === '') {
+                alert("⚠️ Escribe un ID antes de eliminar.");
+                return;
+            }
+
+            const respuesta = await fetch(`/usuarios/${usuarioId}`, { method: 'DELETE' });
+            const resultado = await respuesta.json();
+
+            let resultadoEliminacion = document.getElementById('resultadoEliminacion');
+            if (respuesta.ok) {
+                resultadoEliminacion.innerHTML = `✅ ${resultado.mensaje}`;
+                obtenerUsuarios();
+            } else {
+                resultadoEliminacion.innerHTML = "❌ Usuario no encontrado.";
+            }
+        }
+
+        window.onload = obtenerUsuarios;
+    </script>
+</body>
+</html>
